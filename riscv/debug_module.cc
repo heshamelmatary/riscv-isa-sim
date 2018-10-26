@@ -97,7 +97,9 @@ void debug_module_t::reset()
 }
 
 void debug_module_t::add_device(bus_t *bus) {
+#ifndef RISCV_ENABLE_RVFI_DII
   bus->add_device(DEBUG_START, this);
+#endif
 }
 
 bool debug_module_t::load(reg_t addr, size_t len, uint8_t* bytes)

@@ -67,7 +67,10 @@ sim_t::sim_t(const char* isa, size_t nprocs, bool halted, reg_t start_pc,
   }
 
   clint.reset(new clint_t(procs));
+
+#ifndef RISCV_ENABLE_RVFI_DII
   bus.add_device(CLINT_BASE, clint.get());
+#endif
 }
 
 sim_t::~sim_t()
@@ -205,7 +208,11 @@ void sim_t::make_dtb()
   rom.resize((rom.size() + align - 1) / align * align);
 
   boot_rom.reset(new rom_device_t(rom));
-  bus.add_device(DEFAULT_RSTVEC, boot_rom.get());
+
+  // RVFI-DII doesn't use ROM
+  if (!rvfi_dii)
+    bus.add_device(DEFAULT_RSTVEC, boot_rom.get());
+
 }
 
 char* sim_t::addr_to_mem(reg_t addr) {
