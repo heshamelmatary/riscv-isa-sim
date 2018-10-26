@@ -174,7 +174,7 @@ public:
   void set_histogram(bool value);
   void set_rvfi_dii(bool value);
   void reset();
-  void step(size_t n); // run for n cycles
+  void step(size_t n, insn_t insn = 0x13); // run for n cycles
   void set_csr(int which, reg_t val);
   reg_t get_csr(int which);
   mmu_t* get_mmu() { return mmu; }

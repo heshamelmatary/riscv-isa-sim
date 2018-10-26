@@ -109,12 +109,12 @@ int sim_t::run()
   return htif_t::run();
 }
 
-void sim_t::step(size_t n)
+void sim_t::step(size_t n, insn_t insn)
 {
   for (size_t i = 0, steps = 0; i < n; i += steps)
   {
     steps = std::min(n - i, INTERLEAVE - current_step);
-    procs[current_proc]->step(steps);
+    procs[current_proc]->step(steps, insn);
 
     current_step += steps;
     if (current_step == INTERLEAVE)

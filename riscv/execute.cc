@@ -89,7 +89,7 @@ bool processor_t::slow_path()
 }
 
 // fetch/decode/execute loop
-void processor_t::step(size_t n)
+void processor_t::step(size_t n, insn_t insn)
 {
   if (state.dcsr.cause == DCSR_CAUSE_NONE) {
     if (halt_request) {
