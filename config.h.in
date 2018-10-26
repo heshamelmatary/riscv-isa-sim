@@ -78,6 +78,9 @@
 /* Enable hardware support for misaligned loads and stores */
 #undef RISCV_ENABLE_MISALIGNED
 
+/* Enable RISC-V Formal Interface - Direct Instruction Injection */
+#undef RISCV_ENABLE_RVFI_DII
+
 /* Define if subproject MCPPBS_SPROJ_NORM is enabled */
 #undef SOFTFLOAT_ENABLED
 

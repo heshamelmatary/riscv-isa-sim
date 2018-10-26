@@ -707,6 +707,7 @@ enable_commitlog
 enable_histogram
 enable_dirty
 enable_misaligned
+enable_rvfi_dii
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1355,6 +1356,8 @@ Optional Features:
                           bits
   --enable-misaligned     Enable hardware support for misaligned loads and
                           stores
+  --enable-rvfi-dii       Enable RISC-V Formal Interface - Direct Instruction
+                          Injection
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -4697,6 +4700,19 @@ if test "x$enable_misaligned" = "xyes"; then :
 
 
 $as_echo "#define RISCV_ENABLE_MISALIGNED /**/" >>confdefs.h
+
+
+fi
+
+# Check whether --enable-rvfi_dii was given.
+if test "${enable_rvfi_dii+set}" = set; then :
+  enableval=$enable_rvfi_dii;
+fi
+
+if test "x$enable_rvfi_dii" = "xyes"; then :
+
+
+$as_echo "#define RISCV_ENABLE_RVFI_DII /**/" >>confdefs.h
 
 
 fi
