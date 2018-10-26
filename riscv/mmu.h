@@ -73,6 +73,14 @@ public:
 #ifdef RISCV_ENABLE_MISALIGNED
     for (size_t i = 0; i < size; i++)
       store_uint8(addr + i, data >> (i * 8));
+
+    if (proc) {
+      if (proc->rvfi_dii) {
+        proc->rvfi_dii_output.rvfi_dii_mem_addr = addr;
+        proc->rvfi_dii_output.rvfi_dii_mem_wdata = data;
+        proc->rvfi_dii_output.rvfi_dii_mem_wmask = size;
+      }
+    }
 #else
     throw trap_store_address_misaligned(addr);
 #endif
@@ -81,23 +89,36 @@ public:
   // template for functions that load an aligned value from memory
   #define load_func(type) \
     inline type##_t load_##type(reg_t addr) { \
-      if (unlikely(addr & (sizeof(type##_t)-1))) \
-        return misaligned_load(addr, sizeof(type##_t)); \
+      type##_t data = 0; \
       reg_t vpn = addr >> PGSHIFT; \
-      if (likely(tlb_load_tag[vpn % TLB_ENTRIES] == vpn)) \
-        return *(type##_t*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr); \
+      if (unlikely(addr & (sizeof(type##_t)-1))) { \
+        data = misaligned_load(addr, sizeof(type##_t)); \
+        goto success_load; \
+      }\
+      if (likely(tlb_load_tag[vpn % TLB_ENTRIES] == vpn)) { \
+        data = *(type##_t*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr); \
+        goto success_load; \
+      } \
       if (unlikely(tlb_load_tag[vpn % TLB_ENTRIES] == (vpn | TLB_CHECK_TRIGGERS))) { \
-        type##_t data = *(type##_t*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr); \
+        data = *(type##_t*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr); \
         if (!matched_trigger) { \
           matched_trigger = trigger_exception(OPERATION_LOAD, addr, data); \
           if (matched_trigger) \
             throw *matched_trigger; \
         } \
-        return data; \
+        goto success_load; \
       } \
-      type##_t res; \
-      load_slow_path(addr, sizeof(type##_t), (uint8_t*)&res); \
-      return res; \
+      load_slow_path(addr, sizeof(type##_t), (uint8_t*)&data); \
+      goto success_load; \
+      success_load: \
+      if (proc) { \
+        if (proc->rvfi_dii) { \
+          proc->rvfi_dii_output.rvfi_dii_mem_addr = addr; \
+          proc->rvfi_dii_output.rvfi_dii_mem_rdata = data; \
+          proc->rvfi_dii_output.rvfi_dii_mem_rmask = sizeof(type##_t); \
+        } \
+      } \
+      return data; \
     }
 
   // load value from memory at aligned address; zero extend to register width
@@ -130,6 +151,13 @@ public:
       } \
       else \
         store_slow_path(addr, sizeof(type##_t), (const uint8_t*)&val); \
+      if (proc) { \
+        if (proc->rvfi_dii) { \
+          proc->rvfi_dii_output.rvfi_dii_mem_addr = addr; \
+          proc->rvfi_dii_output.rvfi_dii_mem_wdata = val; \
+          proc->rvfi_dii_output.rvfi_dii_mem_wmask = sizeof(val); \
+        } \
+      } \
     }
 
   // template for functions that perform an atomic memory operation

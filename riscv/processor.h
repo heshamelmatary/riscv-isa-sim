@@ -301,6 +301,8 @@ public:
 
   void trigger_updated();
 
+  rvfi_dii_trace_t rvfi_dii_output;
+
 private:
   simif_t* sim;
   mmu_t* mmu; // main memory is always accessed via the mmu

@@ -85,7 +85,7 @@ static reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
 
 bool processor_t::slow_path()
 {
-  return debug || state.single_step != state.STEP_NONE || state.dcsr.cause;
+  return rvfi_dii || debug || state.single_step != state.STEP_NONE || state.dcsr.cause;
 }
 
 // fetch/decode/execute loop
@@ -141,19 +141,43 @@ void processor_t::step(size_t n, insn_t insn)
             state.single_step = state.STEP_STEPPED;
           }
 
-          insn_fetch_t fetch = mmu->load_insn(pc);
+
+          insn_fetch_t fetch;
+
+          if (rvfi_dii) {
+            // Zero output before writing new trace fields
+            rvfi_dii_output = {0};
+
+            fetch = {decode_insn(insn), insn};
+
+            rvfi_dii_output.rvfi_dii_order = state.minstret;
+            rvfi_dii_output.rvfi_dii_pc_rdata = pc;
+            rvfi_dii_output.rvfi_dii_insn = insn.bits();
+            rvfi_dii_output.rvfi_dii_rs1_data = state.XPR[insn.rs1()];
+            rvfi_dii_output.rvfi_dii_rs2_data = state.XPR[insn.rs2()];
+
+            rvfi_dii_output.rvfi_dii_rs1_addr = insn.rs1();
+            rvfi_dii_output.rvfi_dii_rs2_addr = insn.rs2();
+          } else {
+            fetch = mmu->load_insn(pc);
+          }
+
+
           if (debug && !state.serialized)
             disasm(fetch.insn);
           pc = execute_insn(this, pc, fetch);
 
           advance_pc();
 
-          if (unlikely(state.pc >= DEBUG_ROM_ENTRY &&
-                       state.pc < DEBUG_END)) {
-            // We're waiting for the debugger to tell us something.
-            return;
+          if (rvfi_dii) {
+            rvfi_dii_output.rvfi_dii_pc_wdata = pc;
+          } else { // RVFI-DII doesn't have a debug module, so only check if disabled
+            if (unlikely(state.pc >= DEBUG_ROM_ENTRY &&
+                         state.pc < DEBUG_END)) {
+              // We're waiting for the debugger to tell us something.
+              return;
+            }
           }
-
         }
       }
       else while (instret < n)
@@ -210,6 +234,11 @@ void processor_t::step(size_t n, insn_t insn)
     {
       take_trap(t, pc);
       n = instret;
+
+
+      if (rvfi_dii) {
+        rvfi_dii_output.rvfi_dii_trap = 1;
+      }
 
       if (unlikely(state.single_step == state.STEP_STEPPED)) {
         state.single_step = state.STEP_NONE;

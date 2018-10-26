@@ -134,20 +134,31 @@ private:
 #define RS2 READ_REG(insn.rs2())
 #define WRITE_RD(value) WRITE_REG(insn.rd(), value)
 
-#ifndef RISCV_ENABLE_COMMITLOG
-# define WRITE_REG(reg, value) STATE.XPR.write(reg, value)
-# define WRITE_FREG(reg, value) DO_WRITE_FREG(reg, freg(value))
-#else
+#if defined(RISCV_ENABLE_COMMITLOG)
 # define WRITE_REG(reg, value) ({ \
     reg_t wdata = (value); /* value may have side effects */ \
     STATE.log_reg_write = (commit_log_reg_t){(reg) << 1, {wdata, 0}}; \
     STATE.XPR.write(reg, wdata); \
+    if (p->rvfi_dii && reg) { \
+      p->rvfi_dii_output.rvfi_dii_rd_wdata = wdata; \
+      p->rvfi_dii_output.rvfi_dii_rd_addr = reg; \
+    } \
   })
 # define WRITE_FREG(reg, value) ({ \
     freg_t wdata = freg(value); /* value may have side effects */ \
     STATE.log_reg_write = (commit_log_reg_t){((reg) << 1) | 1, wdata}; \
     DO_WRITE_FREG(reg, wdata); \
   })
+#else
+# define WRITE_REG(reg, value) ({ \
+    reg_t wdata = (value); /* value may have side effects */ \
+    STATE.XPR.write(reg, wdata); \
+    if (p->rvfi_dii && reg) { \
+      p->rvfi_dii_output.rvfi_dii_rd_wdata = wdata; \
+      p->rvfi_dii_output.rvfi_dii_rd_addr = reg; \
+    } \
+  })
+# define WRITE_FREG(reg, value) DO_WRITE_FREG(reg, freg(value))
 #endif
 
 // RVC macros
