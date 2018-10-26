@@ -50,6 +50,7 @@ public:
   // Callback for processors to let the simulation know they were reset.
   void proc_reset(unsigned id);
 
+  std::vector<std::pair<reg_t, mem_t*>> get_mems() {return mems;};
 private:
   std::vector<std::pair<reg_t, mem_t*>> mems;
   mmu_t* debug_mmu;  // debug port into main memory
