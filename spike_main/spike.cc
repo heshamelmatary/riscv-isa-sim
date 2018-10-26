@@ -170,6 +170,12 @@ int main(int argc, char** argv)
   }
   s.set_dtb_enabled(dtb_enabled);
 
+  std::unique_ptr<rvfi_dii_t> remote_rvfi_dii((rvfi_dii_t *) NULL);
+  if (rvfi_dii) {
+    remote_rvfi_dii.reset(new rvfi_dii_t(rvfi_dii_port));
+    s.set_remote_rvfi_dii(&(*remote_rvfi_dii));
+  }
+
   if (dump_dts) {
     printf("%s", s.get_dts());
     return 0;
@@ -189,5 +195,6 @@ int main(int argc, char** argv)
   s.set_debug(debug);
   s.set_log(log);
   s.set_histogram(histogram);
+  s.set_rvfi_dii(rvfi_dii);
   return s.run();
 }
