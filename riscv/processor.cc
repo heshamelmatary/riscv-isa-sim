@@ -140,6 +140,17 @@ void processor_t::set_debug(bool value)
     ext->set_debug(value);
 }
 
+void processor_t::set_rvfi_dii(bool value)
+{
+  rvfi_dii = value;
+#ifndef RISCV_ENABLE_RVFI_DII
+  if (value) {
+    fprintf(stderr, "RVFI_DII support has not been properly enabled;");
+    fprintf(stderr, " please re-build the riscv-isa-run project using \"configure --enable-rvfi-dii\".\n");
+  }
+#endif
+}
+
 void processor_t::set_histogram(bool value)
 {
   histogram_enabled = value;

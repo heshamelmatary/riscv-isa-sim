@@ -15,6 +15,7 @@
 
 class mmu_t;
 class remote_bitbang_t;
+class rvfi_dii_t;
 
 // this class encapsulates the processors and memory in a RISC-V machine.
 class sim_t : public htif_t, public simif_t
@@ -30,6 +31,7 @@ public:
   int run();
   void set_debug(bool value);
   void set_log(bool value);
+  void set_rvfi_dii(bool value);
   void set_histogram(bool value);
   void set_procs_debug(bool value);
   void set_dtb_enabled(bool value) {
@@ -37,6 +39,9 @@ public:
   }
   void set_remote_bitbang(remote_bitbang_t* remote_bitbang) {
     this->remote_bitbang = remote_bitbang;
+  }
+  void set_remote_rvfi_dii(rvfi_dii_t* rvfi_dii) {
+    this->remote_rvfi_dii = rvfi_dii;
   }
   const char* get_dts() { if (dts.empty()) reset(); return dts.c_str(); }
   processor_t* get_core(size_t i) { return procs.at(i); }
@@ -64,9 +69,11 @@ private:
   size_t current_proc;
   bool debug;
   bool log;
+  bool rvfi_dii;
   bool histogram_enabled; // provide a histogram of PCs
   bool dtb_enabled;
   remote_bitbang_t* remote_bitbang;
+  rvfi_dii_t* remote_rvfi_dii;
 
   // memory-mapped I/O routines
   char* addr_to_mem(reg_t addr);

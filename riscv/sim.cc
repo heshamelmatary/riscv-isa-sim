@@ -4,6 +4,7 @@
 #include "mmu.h"
 #include "dts.h"
 #include "remote_bitbang.h"
+#include "rvfi_dii.h"
 #include <map>
 #include <iostream>
 #include <sstream>
@@ -32,6 +33,7 @@ sim_t::sim_t(const char* isa, size_t nprocs, bool halted, reg_t start_pc,
   : htif_t(args), mems(mems), procs(std::max(nprocs, size_t(1))),
     start_pc(start_pc), current_step(0), current_proc(0), debug(false),
     histogram_enabled(false), dtb_enabled(true), remote_bitbang(NULL),
+    remote_rvfi_dii(NULL),
     debug_module(this, progsize, max_bus_master_bits, require_authentication)
 {
   signal(SIGINT, &handle_signal);
@@ -83,6 +85,9 @@ void sim_t::main()
   {
     if (debug || ctrlc_pressed)
       interactive();
+    else if (rvfi_dii) {
+      remote_rvfi_dii->start(this);
+    }
     else
       step(INTERLEAVE);
     if (remote_bitbang) {
@@ -128,6 +133,13 @@ void sim_t::set_debug(bool value)
 void sim_t::set_log(bool value)
 {
   log = value;
+}
+
+void sim_t::set_rvfi_dii(bool value)
+{
+  rvfi_dii = value;
+  for (size_t i=0; i< procs.size(); i++)
+    procs[i]->set_rvfi_dii(value);
 }
 
 void sim_t::set_histogram(bool value)

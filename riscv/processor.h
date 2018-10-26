@@ -10,6 +10,7 @@
 #include <vector>
 #include <map>
 #include "debug_rom_defines.h"
+#include <rvfi_dii.h>
 
 class processor_t;
 class mmu_t;
@@ -171,6 +172,7 @@ public:
 
   void set_debug(bool value);
   void set_histogram(bool value);
+  void set_rvfi_dii(bool value);
   void reset();
   void step(size_t n); // run for n cycles
   void set_csr(int which, reg_t val);
@@ -211,6 +213,7 @@ public:
 
   // When true, display disassembly of each instruction that's executed.
   bool debug;
+  bool rvfi_dii;
   // When true, take the slow simulation path.
   bool slow_path();
   bool halted() { return state.dcsr.cause ? true : false; }
