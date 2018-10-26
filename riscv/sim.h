@@ -108,6 +108,7 @@ private:
   friend class processor_t;
   friend class mmu_t;
   friend class debug_module_t;
+  friend class rvfi_dii_t;
 
   // htif
   friend void sim_thread_main(void*);
