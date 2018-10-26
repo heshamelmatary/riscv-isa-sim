@@ -1,0 +1,3 @@
+[submodule "fesvr"]
+	path = fesvr
+	url = git@github.com:riscv/riscv-fesvr.git
