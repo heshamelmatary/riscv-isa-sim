@@ -3,6 +3,7 @@
 #include "sim.h"
 #include "mmu.h"
 #include "remote_bitbang.h"
+#include "rvfi_dii.h"
 #include "cachesim.h"
 #include "extension.h"
 #include <dlfcn.h>
@@ -36,6 +37,7 @@ static void help()
   fprintf(stderr, "  --extension=<name>    Specify RoCC Extension\n");
   fprintf(stderr, "  --extlib=<name>       Shared library to load\n");
   fprintf(stderr, "  --rbb-port=<port>     Listen on <port> for remote bitbang connection\n");
+  fprintf(stderr, "  --rvfi-dii-port=<port>Listen on <port> for remote rvfi_dii connection\n");
   fprintf(stderr, "  --dump-dts            Print device tree string and exit\n");
   fprintf(stderr, "  --disable-dtb         Don't write the device tree blob into memory\n");
   fprintf(stderr, "  --progsize=<words>    Progsize for the debug module [default 2]\n");
@@ -84,6 +86,7 @@ int main(int argc, char** argv)
   bool log = false;
   bool dump_dts = false;
   bool dtb_enabled = true;
+  bool rvfi_dii = false;
   size_t nprocs = 1;
   reg_t start_pc = reg_t(-1);
   std::vector<std::pair<reg_t, mem_t*>> mems;
@@ -94,6 +97,7 @@ int main(int argc, char** argv)
   std::function<extension_t*()> extension;
   const char* isa = DEFAULT_ISA;
   uint16_t rbb_port = 0;
+  uint16_t rvfi_dii_port = 0;
   bool use_rbb = false;
   unsigned progsize = 2;
   unsigned max_bus_master_bits = 0;
@@ -123,6 +127,7 @@ int main(int argc, char** argv)
   // I wanted to use --halted, but for some reason that doesn't work.
   parser.option('H', 0, 0, [&](const char* s){halted = true;});
   parser.option(0, "rbb-port", 1, [&](const char* s){use_rbb = true; rbb_port = atoi(s);});
+  parser.option(0, "rvfi-dii-port", 1, [&](const char* s){rvfi_dii = true; rvfi_dii_port = atoi(s);});
   parser.option(0, "pc", 1, [&](const char* s){start_pc = strtoull(s, 0, 0);});
   parser.option(0, "hartids", 1, hartids_parser);
   parser.option(0, "ic", 1, [&](const char* s){ic.reset(new icache_sim_t(s));});
@@ -151,7 +156,8 @@ int main(int argc, char** argv)
   if (mems.empty())
     mems = make_mems("2048");
 
-  if (!*argv1)
+  /* If RVFI_DII is enabled, there is no need to load program from command line */
+  if (!*argv1 && !rvfi_dii)
     help();
 
   sim_t s(isa, nprocs, halted, start_pc, mems, htif_args, std::move(hartids),
