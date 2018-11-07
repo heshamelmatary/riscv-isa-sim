@@ -1,0 +1,100 @@
+cheri_subproject_deps = \
+
+cheri_insn_list = $(shell grep ^DECLARE_INSN $(1) | sed 's/DECLARE_INSN(\(.*\),.*,.*)/\1/')
+get_opcode = $(shell grep ^DECLARE_INSN.*\\\<$(2)\\\> $(1) | sed 's/DECLARE_INSN(.*,\(.*\),.*)/\1/')
+
+cheri_hdrs = \
+	cheri.h \
+	cheri_trap.h \
+	cheri_insn_template.h \
+
+cheri_gen_hdrs = \
+	cheri_insn_list.h \
+
+cheri_precompiled_hdrs = \
+	insn_template.h \
+
+cheri_srcs = \
+	dummy_cheri.cc \
+	cheri.cc \
+	$(cheri_gen_srcs)\
+
+cheri_insn_list = \
+	csetoffset \
+	cgetperm \
+	cgettype \
+	cgetbase \
+	cgetlen \
+	cgettag \
+	cgetsealed \
+	cgetoffset \
+	cseal \
+	cunseal \
+	candperm \
+	csetbounds \
+	csetboundsexact \
+	csetboundsimmediate \
+	cincoffsetimmediate \
+	ccleartag \
+	cbuildcap \
+	ccopytype \
+	ccseal \
+	ctoptr \
+	cfromptr \
+	csub \
+	cmove \
+	cmovz \
+	cmovn \
+	cjr \
+	cjalr \
+	ccall \
+	creturn \
+	ccheckperm \
+	cchecktype \
+	ctestsubset \
+	cspecialrw \
+	lbddc \
+	lbuddc \
+	lhddc \
+	lhuddc \
+	lwddc \
+	lwuddc \
+	ldddc \
+	lbcap \
+	lbucap \
+	lhcap \
+	lhucap \
+	lwcap \
+	lwucap \
+	ldcap \
+	lducap \
+	sbddc \
+	shddc \
+	swddc \
+	sdddc \
+	sbcap \
+	shcap \
+	swcap \
+	sdcap \
+	sqcap \
+	ctag \
+	creadhpmcounter \
+#	lc \
+	sc \
+	clc \
+	csc \
+
+cheri_gen_srcs = \
+	$(addsuffix .cc,$(cheri_insn_list))
+
+cheri_insn_list.h: $(src_dir)/cheri/cheri.mk.in
+	for insn in $(foreach insn,$(cheri_insn_list),$(subst .,_,$(insn))) ; do \
+		printf 'DEFINE_INSN(%s)\n' "$${insn}" ; \
+	done > $@.tmp1
+	mv $@.tmp1 $@
+
+$(cheri_gen_srcs): %.cc: insns/%.h cheri_insn_template.cc
+	sed 's/NAME/$(subst .cc,,$@)/' $(src_dir)/cheri/cheri_insn_template.cc | sed 's/OPCODE/$(call get_opcode,$(src_dir)/riscv/encoding.h,$(subst .cc,,$@))/' > $@
+
+cheri_junk = \
+	$(cheri_gen_srcs) \

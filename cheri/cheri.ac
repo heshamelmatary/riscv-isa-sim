@@ -1,0 +1,7 @@
+AC_LANG_CPLUSPLUS
+
+AC_ARG_ENABLE([cheri128], AS_HELP_STRING([--enable-cheri128], [Enable CHERI 128 Compression]))
+AS_IF([test "x$enable_cheri128" = "xyes"], [
+  AC_DEFINE([ENABLE_CHERI128],,[Enable CHERI 128 Compression])
+])
+
