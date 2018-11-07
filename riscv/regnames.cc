@@ -1,4 +1,5 @@
 // See LICENSE for license details.
+// See LICENSE_CHERI for license details.
 
 #include "disasm.h"
 
@@ -14,6 +15,14 @@ const char* fpr_name[] = {
   "fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
   "fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
   "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"
+};
+
+const char *cheri_reg_names[] = {
+  "c0", "c1", "c2", "c3", "c4", "c5", "c6",
+  "c7", "c8", "c9", "c10", "c11", "c12", "c13",
+  "c14", "c15", "c16", "c17", "c18", "c19", "c20",
+  "c21", "c22", "c23", "c24", "c25", "c26", "c27",
+  "c28", "c29", "c30", "c31"
 };
 
 const char* csr_name(int which) {

@@ -708,6 +708,10 @@ enable_histogram
 enable_dirty
 enable_misaligned
 enable_rvfi_dii
+enable_cheri
+enable_mergedrf
+enable_hpm
+enable_cheri128
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1358,6 +1362,10 @@ Optional Features:
                           stores
   --enable-rvfi-dii       Enable RISC-V Formal Interface - Direct Instruction
                           Injection
+  --enable-cheri          Enable CHERI Extension
+  --enable-mergedrf       Enable Merged Register File
+  --enable-hpm            Enable Hardware Performance Monitor
+  --enable-cheri128       Enable CHERI 128 Compression
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -4717,6 +4725,45 @@ $as_echo "#define RISCV_ENABLE_RVFI_DII /**/" >>confdefs.h
 
 fi
 
+# Check whether --enable-cheri was given.
+if test "${enable_cheri+set}" = set; then :
+  enableval=$enable_cheri;
+fi
+
+if test "x$enable_cheri" = "xyes"; then :
+
+
+$as_echo "#define ENABLE_CHERI /**/" >>confdefs.h
+
+
+fi
+
+# Check whether --enable-mergedrf was given.
+if test "${enable_mergedrf+set}" = set; then :
+  enableval=$enable_mergedrf;
+fi
+
+if test "x$enable_mergedrf" = "xyes"; then :
+
+
+$as_echo "#define CHERI_MERGED_RF /**/" >>confdefs.h
+
+
+fi
+
+# Check whether --enable-hpm was given.
+if test "${enable_hpm+set}" = set; then :
+  enableval=$enable_hpm;
+fi
+
+if test "x$enable_hpm" = "xyes"; then :
+
+
+$as_echo "#define RISCV_ENABLE_HPM /**/" >>confdefs.h
+
+
+fi
+
 
 
 
@@ -4760,6 +4807,71 @@ $as_echo "$as_me: configuring default subproject : dummy_rocc" >&6;}
       subprojects_enabled="$subprojects_enabled dummy_rocc"
 
 $as_echo "#define DUMMY_ROCC_ENABLED /**/" >>confdefs.h
+
+
+
+
+
+
+    # Determine if this is a required or an optional subproject
+
+
+
+    # Determine if there is a group with the same name
+
+
+
+    # Create variations of the subproject name suitable for use as a CPP
+    # enabled define, a shell enabled variable, and a shell function
+
+
+
+
+
+
+
+
+
+
+
+    # Add subproject to our running list
+
+    subprojects="$subprojects cheri"
+
+    # Process the subproject appropriately. If enabled add it to the
+    # $enabled_subprojects running shell variable, set a
+    # SUBPROJECT_ENABLED C define, and include the appropriate
+    # 'subproject.ac'.
+
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: configuring default subproject : cheri" >&5
+$as_echo "$as_me: configuring default subproject : cheri" >&6;}
+      ac_config_files="$ac_config_files cheri.mk:cheri/cheri.mk.in"
+
+      enable_cheri_sproj="yes"
+      subprojects_enabled="$subprojects_enabled cheri"
+
+$as_echo "#define CHERI_ENABLED /**/" >>confdefs.h
+
+      ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+# Check whether --enable-cheri128 was given.
+if test "${enable_cheri128+set}" = set; then :
+  enableval=$enable_cheri128;
+fi
+
+if test "x$enable_cheri128" = "xyes"; then :
+
+
+$as_echo "#define ENABLE_CHERI128 /**/" >>confdefs.h
+
+
+fi
 
 
 
@@ -4891,6 +5003,8 @@ ac_config_files="$ac_config_files riscv-softfloat.pc"
 ac_config_files="$ac_config_files riscv-dummy_rocc.pc"
 
 ac_config_files="$ac_config_files riscv-spike_main.pc"
+
+ac_config_files="$ac_config_files riscv-cheri.pc"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5585,6 +5699,7 @@ do
   case $ac_config_target in
     "riscv.mk") CONFIG_FILES="$CONFIG_FILES riscv.mk:riscv/riscv.mk.in" ;;
     "dummy_rocc.mk") CONFIG_FILES="$CONFIG_FILES dummy_rocc.mk:dummy_rocc/dummy_rocc.mk.in" ;;
+    "cheri.mk") CONFIG_FILES="$CONFIG_FILES cheri.mk:cheri/cheri.mk.in" ;;
     "softfloat.mk") CONFIG_FILES="$CONFIG_FILES softfloat.mk:softfloat/softfloat.mk.in" ;;
     "spike_main.mk") CONFIG_FILES="$CONFIG_FILES spike_main.mk:spike_main/spike_main.mk.in" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
@@ -5594,6 +5709,7 @@ do
     "riscv-softfloat.pc") CONFIG_FILES="$CONFIG_FILES riscv-softfloat.pc" ;;
     "riscv-dummy_rocc.pc") CONFIG_FILES="$CONFIG_FILES riscv-dummy_rocc.pc" ;;
     "riscv-spike_main.pc") CONFIG_FILES="$CONFIG_FILES riscv-spike_main.pc" ;;
+    "riscv-cheri.pc") CONFIG_FILES="$CONFIG_FILES riscv-cheri.pc" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

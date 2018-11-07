@@ -1,4 +1,5 @@
 // See LICENSE for license details.
+// See LICENSE_CHERI for license details.
 
 #include "cachesim.h"
 #include "common.h"
@@ -98,6 +99,35 @@ void cache_sim_t::print_stats()
   std::cout << "Writebacks:            " << writebacks << std::endl;
   std::cout << name << " ";
   std::cout << "Miss Rate:             " << mr << '%' << std::endl;
+}
+
+void cache_sim_t::read_counter(uint64_t *ret_value, int idx)
+{
+  int cache_index = 0;
+
+  if (name == "I$")
+      cache_index = 0;
+  else if (name == "D$")
+      cache_index = 7;
+  else if (name == "L2$")
+      cache_index = 14;
+  else
+      std::cout << "Wrong cache\n";
+
+
+  /* Each cache has 7 counters, hit if the required index is within our range */
+  if (idx >= cache_index && idx < cache_index + 7) {
+    switch(idx - cache_index) {
+        case 0: *ret_value = bytes_read; break;
+        case 1: *ret_value = bytes_written; break;
+        case 2: *ret_value = read_accesses; break;
+        case 3: *ret_value = write_accesses; break;
+        case 4: *ret_value = read_misses; break;
+        case 5: *ret_value = write_misses; break;
+        case 6: *ret_value = writebacks; break;
+        default: std::cout << "Wrong cache counter idx" << std::endl; exit(-1);
+    }
+  }
 }
 
 uint64_t* cache_sim_t::check_tag(uint64_t addr)

@@ -189,6 +189,7 @@ int main(int argc, char** argv)
   {
     if (ic) s.get_core(i)->get_mmu()->register_memtracer(&*ic);
     if (dc) s.get_core(i)->get_mmu()->register_memtracer(&*dc);
+    if (l2) s.get_core(i)->get_mmu()->register_l2cache(&*l2);
     if (extension) s.get_core(i)->register_extension(extension());
   }
 

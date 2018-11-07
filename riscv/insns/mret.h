@@ -7,3 +7,7 @@ s = set_field(s, MSTATUS_MPIE, 1);
 s = set_field(s, MSTATUS_MPP, PRV_U);
 p->set_privilege(prev_prv);
 p->set_csr(CSR_MSTATUS, s);
+
+#ifdef ENABLE_CHERI
+PCC = CHERI_STATE.csrs_reg_file[CHERI_CSR_MEPCC];
+#endif

@@ -3,6 +3,7 @@ get_opcode = $(shell grep ^DECLARE_INSN.*\\\<$(2)\\\> $(1) | sed 's/DECLARE_INSN
 
 riscv_subproject_deps = \
 	softfloat \
+	cheri \
 
 riscv_install_prog_srcs = \
 

@@ -1,4 +1,5 @@
 // See LICENSE for license details.
+// See LICENSE_CHERI for license details.
 
 #ifndef _RISCV_CACHE_SIM_H
 #define _RISCV_CACHE_SIM_H
@@ -9,6 +10,7 @@
 #include <map>
 #include <cstdint>
 
+class cache_memtracer_t;
 class lfsr_t
 {
  public:
@@ -30,6 +32,7 @@ class cache_sim_t
   void print_stats();
   void set_miss_handler(cache_sim_t* mh) { miss_handler = mh; }
   void set_log(bool _log) { log = _log; }
+  void read_counter(uint64_t *ret_value, int counter_id);
 
   static cache_sim_t* construct(const char* config, const char* name);
 
@@ -57,6 +60,8 @@ class cache_sim_t
   uint64_t write_misses;
   uint64_t bytes_written;
   uint64_t writebacks;
+
+  friend cache_memtracer_t;
 
   std::string name;
   bool log;
@@ -95,6 +100,21 @@ class cache_memtracer_t : public memtracer_t
     cache->set_log(log);
   }
 
+  void printstats() {cache->print_stats();};
+
+  void read_counter(uint64_t *ret_value, int counter_id) {cache->read_counter(ret_value, counter_id);};
+
+  void reset(void)
+  {
+   printf("restting caches ............\n");
+   cache->read_accesses = 0;
+   cache->read_misses = 0;
+   cache->bytes_read = 0;
+   cache->write_accesses = 0;
+   cache->write_misses = 0;
+   cache->bytes_written = 0;
+   cache->writebacks = 0;
+  }
  protected:
   cache_sim_t* cache;
 };

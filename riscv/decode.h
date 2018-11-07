@@ -1,4 +1,5 @@
 // See LICENSE for license details.
+// See LICENSE_CHERI for license details.
 
 #ifndef _RISCV_DECODE_H
 #define _RISCV_DECODE_H
@@ -20,6 +21,7 @@
 #include "softfloat_types.h"
 #include "specialize.h"
 #include <cinttypes>
+#include "cheri_types.h"
 
 typedef int64_t sreg_t;
 typedef uint64_t reg_t;
@@ -101,6 +103,17 @@ public:
   uint64_t rvc_rs2() { return x(2, 5); }
   uint64_t rvc_rs1s() { return 8 + x(7, 3); }
   uint64_t rvc_rs2s() { return 8 + x(2, 3); }
+
+#ifdef ENABLE_CHERI
+  uint64_t cd() { return x(7, 5); }
+  uint64_t srd() { return x(7, 4); }
+  uint64_t scrs() { return x(12, 4); }
+  uint64_t cs1() { return x(15, 5); }
+  uint64_t cs2() { return x(20, 5); }
+  /* CHERI CSR */
+  uint64_t chs() { return x(20, 5); }
+#endif /* ENABLE_CHERI */
+
 private:
   insn_bits_t b;
   uint64_t x(int lo, int len) { return (b >> lo) & ((insn_bits_t(1) << len)-1); }
@@ -125,10 +138,38 @@ private:
   T data[N];
 };
 
+template <>
+class regfile_t <cheri_reg_t, 32, true>
+{
+public:
+  void write(size_t i, reg_t value)
+  {
+    if (i != 0)
+      data[i].offset = value;
+  }
+  void write(size_t i, cheri_reg_t value)
+  {
+    if (i != 0)
+      data[i] = value;
+  }
+  const cheri_reg_t& operator [] (size_t i) const
+  {
+    return data[i];
+  }
+private:
+  cheri_reg_t data[32];
+};
+
 // helpful macros, etc
 #define MMU (*p->get_mmu())
 #define STATE (*p->get_state())
+
+#ifdef CHERI_MERGED_RF
+#define READ_REG(reg) STATE.XPR[reg].offset
+#else
 #define READ_REG(reg) STATE.XPR[reg]
+#endif
+
 #define READ_FREG(reg) STATE.FPR[reg]
 #define RS1 READ_REG(insn.rs1())
 #define RS2 READ_REG(insn.rs2())

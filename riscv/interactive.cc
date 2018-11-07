@@ -1,4 +1,5 @@
 // See LICENSE for license details.
+// See LICENSE_CHERI for license details.
 
 #include "decode.h"
 #include "disasm.h"
@@ -68,6 +69,7 @@ void sim_t::interactive()
   funcs["rs"] = &sim_t::interactive_run_silent;
   funcs["reg"] = &sim_t::interactive_reg;
   funcs["freg"] = &sim_t::interactive_freg;
+  funcs["creg"] = &sim_t::interactive_creg;
   funcs["fregs"] = &sim_t::interactive_fregs;
   funcs["fregd"] = &sim_t::interactive_fregd;
   funcs["pc"] = &sim_t::interactive_pc;
@@ -200,7 +202,11 @@ reg_t sim_t::get_reg(const std::vector<std::string>& args)
   if (r >= NXPR)
     throw trap_interactive();
 
+#ifdef CHERI_MERGED_RF
+  return p->get_state()->XPR[r].offset;
+#else
   return p->get_state()->XPR[r];
+#endif
 }
 
 freg_t sim_t::get_freg(const std::vector<std::string>& args)
@@ -225,7 +231,13 @@ void sim_t::interactive_reg(const std::string& cmd, const std::vector<std::strin
     processor_t *p = get_core(args[0]);
 
     for (int r = 0; r < NXPR; ++r) {
+
+#ifdef CHERI_MERGED_RF
+      fprintf(stderr, "%-4s: 0x%016" PRIx64 "  ", xpr_name[r], p->get_state()->XPR[r].offset);
+#else
       fprintf(stderr, "%-4s: 0x%016" PRIx64 "  ", xpr_name[r], p->get_state()->XPR[r]);
+#endif
+
       if ((r + 1) % 4 == 0)
         fprintf(stderr, "\n");
     }
@@ -251,6 +263,70 @@ void sim_t::interactive_fregs(const std::string& cmd, const std::vector<std::str
   fpr f;
   f.r = get_freg(args);
   fprintf(stderr, "%g\n", isBoxedF32(f.r) ? (double)f.s : NAN);
+}
+
+void sim_t::interactive_creg(const std::string& cmd, const std::vector<std::string>& args)
+{
+  if (args.size() == 1) {
+    cheri_reg_t creg;
+    // Show all the regs!
+    processor_t *p = get_core(args[0]);
+
+    for (int r = 0; r < NUM_CHERI_REGS; ++r) {
+      creg = CHERI_STATE.reg_file[r];
+      fprintf(stderr, "%-4s:" "{base: 0x%016" PRIx64 " | length: 0x%016" PRIx64 " | offset: 0x%016" PRIx64
+      " | uperm: 0x%016" PRIx32 " | perms: 0x%016" PRIx32 " | sealed: 0x%016" PRIx32 " | otype: 0x%016" PRIx32 " | tag: 0x%016" PRIx32 "}  ",
+
+      cheri_reg_names[r],
+      creg.base,
+      creg.length,
+      creg.offset,
+
+      creg.uperms,
+      creg.perms,
+      creg.sealed,
+
+      creg.otype,
+      creg.tag
+      );
+
+      fprintf(stderr, "\n");
+    }
+
+    creg = PCC;
+    fprintf(stderr, "%-4s:" "{base: 0x%016" PRIx64 " | length: 0x%016" PRIx64 " | offset: 0x%016" PRIx64
+    " | uperm: 0x%016" PRIx32 " | perms: 0x%016" PRIx32 " | sealed: 0x%016" PRIx32 " | otype: 0x%016" PRIx32 " | tag: 0x%016" PRIx32 "}  ",
+      "PCC",
+      creg.base,
+      creg.length,
+      creg.offset,
+
+      creg.uperms,
+      creg.perms,
+      creg.sealed,
+
+      creg.otype,
+      creg.tag
+      );
+    fprintf(stderr, "\n");
+
+    creg = DDC;
+    fprintf(stderr, "%-4s:" "{base: 0x%016" PRIx64 " | length: 0x%016" PRIx64 " | offset: 0x%016" PRIx64
+    " | uperm: 0x%016" PRIx32 " | perms: 0x%016" PRIx32 " | sealed: 0x%016" PRIx32 " | otype: 0x%016" PRIx32 " | tag: 0x%016" PRIx32 "}  ",
+      "DDC",
+      creg.base,
+      creg.length,
+      creg.offset,
+
+      creg.uperms,
+      creg.perms,
+      creg.sealed,
+
+      creg.otype,
+      creg.tag
+      );
+    fprintf(stderr, "\n");
+  }
 }
 
 void sim_t::interactive_fregd(const std::string& cmd, const std::vector<std::string>& args)

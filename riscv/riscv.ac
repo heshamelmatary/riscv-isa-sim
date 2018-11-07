@@ -47,3 +47,18 @@ AC_ARG_ENABLE([rvfi_dii], AS_HELP_STRING([--enable-rvfi-dii], [Enable RISC-V For
 AS_IF([test "x$enable_rvfi_dii" = "xyes"], [
   AC_DEFINE([RISCV_ENABLE_RVFI_DII],,[Enable RISC-V Formal Interface - Direct Instruction Injection])
 ])
+
+AC_ARG_ENABLE([cheri], AS_HELP_STRING([--enable-cheri], [Enable CHERI Extension]))
+AS_IF([test "x$enable_cheri" = "xyes"], [
+  AC_DEFINE([ENABLE_CHERI],,[Enable CHERI Extension])
+])
+
+AC_ARG_ENABLE([mergedrf], AS_HELP_STRING([--enable-mergedrf], [Enable Merged Register File]))
+AS_IF([test "x$enable_mergedrf" = "xyes"], [
+  AC_DEFINE([CHERI_MERGED_RF],,[Enable CHERI Merged RF])
+])
+
+AC_ARG_ENABLE([hpm], AS_HELP_STRING([--enable-hpm], [Enable Hardware Performance Monitor]))
+AS_IF([test "x$enable_hpm" = "xyes"], [
+  AC_DEFINE([RISCV_ENABLE_HPM],,[Enable hardware performance monitoring in xhpm[event|counter] registers])
+])

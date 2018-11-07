@@ -3,6 +3,12 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* Define if subproject MCPPBS_SPROJ_NORM is enabled */
+#undef CHERI_ENABLED
+
+/* Enable CHERI Merged RF */
+#undef CHERI_MERGED_RF
+
 /* Default value for --isa switch */
 #undef DEFAULT_ISA
 
@@ -11,6 +17,12 @@
 
 /* Define if subproject MCPPBS_SPROJ_NORM is enabled */
 #undef DUMMY_ROCC_ENABLED
+
+/* Enable CHERI Extension */
+#undef ENABLE_CHERI
+
+/* Enable CHERI 128 Compression */
+#undef ENABLE_CHERI128
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -74,6 +86,9 @@
 
 /* Enable PC histogram generation */
 #undef RISCV_ENABLE_HISTOGRAM
+
+/* Enable hardware performance monitoring in xhpm[event|counter] registers */
+#undef RISCV_ENABLE_HPM
 
 /* Enable hardware support for misaligned loads and stores */
 #undef RISCV_ENABLE_MISALIGNED

@@ -1,4 +1,6 @@
 // See LICENSE for license details.
+// See LICENSE_CHERI for license details.
+
 #ifndef _RISCV_PROCESSOR_H
 #define _RISCV_PROCESSOR_H
 
@@ -92,7 +94,12 @@ struct state_t
   static const int num_triggers = 4;
 
   reg_t pc;
+
+#ifndef CHERI_MERGED_RF
   regfile_t<reg_t, NXPR, true> XPR;
+#else
+  regfile_t<cheri_reg_t, NXPR, true> XPR;
+#endif
   regfile_t<freg_t, NFPR, false> FPR;
 
   // control and status registers
@@ -146,6 +153,21 @@ struct state_t
   int last_inst_xlen;
   int last_inst_flen;
 #endif
+
+#ifdef RISCV_ENABLE_HPM
+  /* First 3 events/counters are reserved for cycle, insret and time/reserved */
+
+  reg_t mhpmevent[29];
+  reg_t mhpmcounter[29];
+
+  reg_t shpmevent[29];
+  reg_t shpmcounter[29];
+#endif /* RISCV_ENABLE_HPM */
+
+#ifdef ENABLE_CHERI
+  reg_t mcausec;
+  reg_t scausec;
+#endif /* ENABLE_CHERI */
 };
 
 typedef enum {

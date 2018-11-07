@@ -1,4 +1,5 @@
 // See LICENSE for license details.
+// See LICENSE_CHERI for license details.
 
 #ifndef _RISCV_MMU_H
 #define _RISCV_MMU_H
@@ -10,8 +11,10 @@
 #include "simif.h"
 #include "processor.h"
 #include "memtracer.h"
+#include "cachesim.h"
 #include <stdlib.h>
 #include <vector>
+#include "cheri.h"
 
 // virtual memory configuration
 #define PGSHIFT 12
@@ -87,6 +90,48 @@ public:
   }
 
   // template for functions that load an aligned value from memory
+#ifdef ENABLE_CHERI
+  #define load_func(type) \
+    inline type##_t load_##type(reg_t addr) { \
+      type##_t data = 0; \
+      reg_t vpn = addr >> PGSHIFT; \
+      if (proc) { \
+        cheri_t *cheri = (static_cast<cheri_t*>(proc->get_extension())); \
+        if (cheri) { \
+          cheri_reg_t ddc = cheri->state.csrs_reg_file[CHERI_CSR_DDC]; \
+          addr += ddc.base + ddc.offset; \
+        } \
+      } \
+      if (unlikely(addr & (sizeof(type##_t)-1))) { \
+        data = misaligned_load(addr, sizeof(type##_t)); \
+        goto success_load; \
+      }\
+      if (likely(tlb_load_tag[vpn % TLB_ENTRIES] == vpn)) { \
+        data = *(type##_t*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr); \
+        goto success_load; \
+      } \
+      if (unlikely(tlb_load_tag[vpn % TLB_ENTRIES] == (vpn | TLB_CHECK_TRIGGERS))) { \
+        data = *(type##_t*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr); \
+        if (!matched_trigger) { \
+          matched_trigger = trigger_exception(OPERATION_LOAD, addr, data); \
+          if (matched_trigger) \
+            throw *matched_trigger; \
+        } \
+        goto success_load; \
+      } \
+      load_slow_path(addr, sizeof(type##_t), (uint8_t*)&data); \
+      goto success_load; \
+      success_load: \
+      if (proc) { \
+        if (proc->rvfi_dii) { \
+          proc->rvfi_dii_output.rvfi_dii_mem_addr = addr; \
+          proc->rvfi_dii_output.rvfi_dii_mem_rdata = data; \
+          proc->rvfi_dii_output.rvfi_dii_mem_rmask = sizeof(type##_t); \
+        } \
+      } \
+      return data; \
+    }
+#else
   #define load_func(type) \
     inline type##_t load_##type(reg_t addr) { \
       type##_t data = 0; \
@@ -120,6 +165,31 @@ public:
       } \
       return data; \
     }
+#endif
+
+#ifdef ENABLE_CHERI
+    cheri_reg_t load_cheri_reg(reg_t paddr) {
+      if (unlikely(paddr & (sizeof(cheri_reg_inmem_t)-1)))
+        throw trap_load_address_misaligned(paddr);
+#ifdef ENABLE_CHERI128
+      cheri_reg_inmem_t res;
+      cheri_reg_t ret_reg;
+      if (auto host_addr = sim->addr_to_mem(paddr)) {
+        memcpy((uint8_t*)&res, host_addr, sizeof(cheri_reg_inmem_t));
+      }
+
+      decompress_128cap(res.pesbt, res.cursor, &ret_reg);
+      return ret_reg;
+#else
+      cheri_reg_t res;
+      if (auto host_addr = sim->addr_to_mem(paddr)) {
+        memcpy((uint8_t*)&res, host_addr, sizeof(cheri_reg_inmem_t));
+      }
+
+      return res;
+#endif
+    }
+#endif /* ENABLE_CHERI */
 
   // load value from memory at aligned address; zero extend to register width
   load_func(uint8)
@@ -134,6 +204,43 @@ public:
   load_func(int64)
 
   // template for functions that store an aligned value to memory
+
+#ifdef ENABLE_CHERI
+  #define store_func(type) \
+    void store_##type(reg_t addr, type##_t val) { \
+      if (proc) { \
+        cheri_t *cheri = (static_cast<cheri_t*>(proc->get_extension())); \
+        if (cheri) { \
+          cheri_reg_t ddc = cheri->state.csrs_reg_file[CHERI_CSR_DDC]; \
+          addr += ddc.base + ddc.offset; \
+          /*cheri->cheriMem_clearTag(addr);*/ \
+        } \
+      } \
+      if (unlikely(addr & (sizeof(type##_t)-1))) \
+        return misaligned_store(addr, val, sizeof(type##_t)); \
+      reg_t vpn = addr >> PGSHIFT; \
+      if (likely(tlb_store_tag[vpn % TLB_ENTRIES] == vpn)) \
+        *(type##_t*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr) = val; \
+      else if (unlikely(tlb_store_tag[vpn % TLB_ENTRIES] == (vpn | TLB_CHECK_TRIGGERS))) { \
+        if (!matched_trigger) { \
+          matched_trigger = trigger_exception(OPERATION_STORE, addr, val); \
+          if (matched_trigger) \
+            throw *matched_trigger; \
+        } \
+        *(type##_t*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr) = val; \
+         /* cheri->cheriMem_clearTag(addr); */\
+      } \
+      else \
+        store_slow_path(addr, sizeof(type##_t), (const uint8_t*)&val); \
+      if (proc) { \
+        if (proc->rvfi_dii) { \
+          proc->rvfi_dii_output.rvfi_dii_mem_addr = addr; \
+          proc->rvfi_dii_output.rvfi_dii_mem_wdata = val; \
+          proc->rvfi_dii_output.rvfi_dii_mem_wmask = sizeof(val); \
+        } \
+      } \
+    }
+#else
   #define store_func(type) \
     void store_##type(reg_t addr, type##_t val) { \
       if (unlikely(addr & (sizeof(type##_t)-1))) \
@@ -159,6 +266,7 @@ public:
         } \
       } \
     }
+#endif /* ENABLE_CHERI */
 
   // template for functions that perform an atomic memory operation
   #define amo_func(type) \
@@ -204,6 +312,25 @@ public:
   store_func(uint32)
   store_func(uint64)
 
+#ifdef ENABLE_CHERI
+    void store_cheri_reg(reg_t paddr, cheri_reg_t val) {
+      if (unlikely(paddr & (sizeof(cheri_reg_inmem_t)-1)))
+        throw trap_store_address_misaligned(paddr);
+      else {
+        if (auto host_addr = sim->addr_to_mem(paddr)) {
+#ifdef ENABLE_CHERI128
+					cheri_reg_inmem_t reg_compressed;
+					reg_compressed.pesbt = compress_128cap(&val);
+					reg_compressed.cursor = val.base + val.offset;
+          memcpy(host_addr, (const uint8_t*)&reg_compressed, sizeof(cheri_reg_inmem_t));
+#else
+          memcpy(host_addr, (const uint8_t*)&val, sizeof(cheri_reg_inmem_t));
+#endif
+        }
+      }
+    }
+#endif /* ENABLE_CHERI */
+
   // perform an atomic memory operation at an aligned address
   amo_func(uint32)
   amo_func(uint64)
@@ -231,6 +358,10 @@ public:
       throw trap_store_access_fault(vaddr); // disallow SC to I/O space
   }
 
+#ifdef ENABLE_CHERI
+  /* Currently CHERI need to know paddr to set tagged bits */
+  reg_t translate(reg_t addr, reg_t len, access_type type);
+#endif /* ENABLE_CHERI */
   static const reg_t ICACHE_ENTRIES = 1024;
 
   inline size_t icache_index(reg_t addr)
@@ -273,6 +404,10 @@ public:
 
   inline icache_entry_t* access_icache(reg_t addr)
   {
+#ifdef ENABLE_CHERI
+    cheri_reg_t pcc = (static_cast<cheri_t*>(proc->get_extension()))->state.csrs_reg_file[CHERI_CSR_PCC];
+    addr += (sreg_t) pcc.base + (sreg_t) pcc.offset;
+#endif
     icache_entry_t* entry = &icache[icache_index(addr)];
     if (likely(entry->tag == addr))
       return entry;
@@ -282,6 +417,10 @@ public:
   inline insn_fetch_t load_insn(reg_t addr)
   {
     icache_entry_t entry;
+#ifdef ENABLE_CHERI
+    cheri_reg_t pcc = (static_cast<cheri_t*>(proc->get_extension()))->state.csrs_reg_file[CHERI_CSR_PCC];
+    addr += (sreg_t) pcc.base + (sreg_t) pcc.offset;
+#endif
     return refill_icache(addr, &entry)->data;
   }
 
@@ -289,6 +428,10 @@ public:
   void flush_icache();
 
   void register_memtracer(memtracer_t*);
+  void register_l2cache(cache_sim_t* l2) {l2cache = l2;}
+  cache_sim_t *get_l2cache() {return l2cache;}
+
+  memtracer_list_t *get_tracer() {return &tracer;};
 
   int is_dirty_enabled()
   {
@@ -313,6 +456,7 @@ private:
   processor_t* proc;
   memtracer_list_t tracer;
   reg_t load_reservation_address;
+  cache_sim_t *l2cache;
   uint16_t fetch_temp;
 
   // implement an instruction cache for simulator performance
@@ -339,7 +483,9 @@ private:
   tlb_entry_t fetch_slow_path(reg_t addr);
   void load_slow_path(reg_t addr, reg_t len, uint8_t* bytes);
   void store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes);
+#ifndef ENABLE_CHERI
   reg_t translate(reg_t addr, reg_t len, access_type type);
+#endif
 
   // ITLB lookup
   inline tlb_entry_t translate_insn_addr(reg_t addr) {

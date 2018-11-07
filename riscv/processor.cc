@@ -1,4 +1,5 @@
 // See LICENSE for license details.
+// See LICENSE_CHERI for license details.
 
 #include "processor.h"
 #include "extension.h"
@@ -169,9 +170,6 @@ void processor_t::reset()
   halt_on_reset = false;
   set_csr(CSR_MSTATUS, state.mstatus);
 
-  if (ext)
-    ext->reset(); // reset the extension
-
   if (sim)
     sim->proc_reset(id);
 }
@@ -292,6 +290,12 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
     // handle the trap in S-mode
     state.pc = state.stvec;
     state.scause = t.cause();
+#ifdef ENABLE_CHERI
+    cheri_t *cheri = (static_cast<cheri_t*>(get_extension()));
+    state.scausec = cheri->get_cause();
+    cheri->state.csrs_reg_file[CHERI_CSR_SEPCC] = cheri->state.csrs_reg_file[CHERI_CSR_PCC];
+    cheri->state.csrs_reg_file[CHERI_CSR_PCC] = cheri->state.csrs_reg_file[CHERI_CSR_STCC];
+#endif /* ENABLE_CHERI */
     state.sepc = epc;
     state.stval = t.get_tval();
 
@@ -306,6 +310,12 @@ void processor_t::take_trap(trap_t& t, reg_t epc)
     state.pc = (state.mtvec & ~(reg_t)1) + vector;
     state.mepc = epc;
     state.mcause = t.cause();
+#ifdef ENABLE_CHERI
+    cheri_t *cheri = (static_cast<cheri_t*>(get_extension()));
+    state.mcausec = cheri->get_cause();
+    cheri->state.csrs_reg_file[CHERI_CSR_MEPCC] = cheri->state.csrs_reg_file[CHERI_CSR_PCC];
+    cheri->state.csrs_reg_file[CHERI_CSR_PCC] = cheri->state.csrs_reg_file[CHERI_CSR_MTCC];
+#endif /* ENABLE_CHERI */
     state.mtval = t.get_tval();
 
     reg_t s = state.mstatus;
@@ -671,6 +681,10 @@ reg_t processor_t::get_csr(int which)
     case CSR_MEPC: return state.mepc & pc_alignment_mask();
     case CSR_MSCRATCH: return state.mscratch;
     case CSR_MCAUSE: return state.mcause;
+#ifdef ENABLE_CHERI
+    case CSR_SCAUSEC: return state.scausec;
+    case CSR_MCAUSEC: return state.mcausec;
+#endif /* ENABLE_CHERI */
     case CSR_MTVAL: return state.mtval;
     case CSR_MISA: return state.misa;
     case CSR_MARCHID: return 5;
@@ -801,6 +815,9 @@ void processor_t::register_extension(extension_t* x)
     throw std::logic_error("only one extension may be registered");
   ext = x;
   x->set_processor(this);
+
+  /* Reset the extension */
+  x->reset();
 }
 
 void processor_t::register_base_instructions()
