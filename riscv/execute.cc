@@ -153,7 +153,7 @@ void processor_t::step(size_t n, insn_t insn)
             rvfi_dii_output.rvfi_dii_order = state.minstret;
             rvfi_dii_output.rvfi_dii_pc_rdata = pc;
             rvfi_dii_output.rvfi_dii_insn = insn.bits();
-#ifdef ENABLE_CHERI
+#ifdef CHERI_MERGED_RF
             rvfi_dii_output.rvfi_dii_rs1_data = state.XPR[insn.rs1()].offset;
             rvfi_dii_output.rvfi_dii_rs2_data = state.XPR[insn.rs2()].offset;
 
