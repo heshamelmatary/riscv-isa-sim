@@ -31,13 +31,14 @@
  * SUCH DAMAGE.
  */
 
+#include <config.h>
+#ifdef ENABLE_CHERI
 #ifndef _RISCV_CHERI_H
 #define _RISCV_CHERI_H
 
 #include "extension.h"
 #include "cheri_trap.h"
 #include "cheri_compressed_cap.h"
-#include <config.h>
 
 #define DEBUG 0
 #define BIT(x) (1ull << (x))
@@ -151,4 +152,5 @@ class cheri_t : public extension_t {
   std::vector<insn_desc_t> instructions;
 };
 
+#endif
 #endif

@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  */
 
+#include <config.h>
+#ifdef ENABLE_CHERI
 #include "cheri.h"
 #include "mmu.h"
 #include <cstring>
@@ -50,3 +52,4 @@ class dummy_cheri_t : public cheri_t {
 REGISTER_EXTENSION(cheri, []() {
   return new dummy_cheri_t;
 })
+#endif

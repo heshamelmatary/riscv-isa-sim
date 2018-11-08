@@ -1,5 +1,7 @@
 // See LICENSE for license details.
 
+#include <config.h>
+#ifdef ENABLE_CHERI
 #include "cheri_insn_template.h"
 
 reg_t rv32_NAME(processor_t* p, insn_t insn, reg_t pc) {
@@ -17,3 +19,4 @@ reg_t rv64_NAME(processor_t* p, insn_t insn, reg_t pc) {
   trace_opcode(p, OPCODE, insn);
   return npc;
 }
+#endif

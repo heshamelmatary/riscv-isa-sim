@@ -31,6 +31,8 @@
  * SUCH DAMAGE.
  */
 
+#include <config.h>
+#ifdef ENABLE_CHERI
 #include "cheri.h"
 #include "trap.h"
 #include "mmu.h"
@@ -185,3 +187,4 @@ void cheri_t::reset() {
   clen = 4 * p->get_xlen();
 #endif
 };
+#endif

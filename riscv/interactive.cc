@@ -267,6 +267,7 @@ void sim_t::interactive_fregs(const std::string& cmd, const std::vector<std::str
 
 void sim_t::interactive_creg(const std::string& cmd, const std::vector<std::string>& args)
 {
+#ifdef ENABLE_CHERI
   if (args.size() == 1) {
     cheri_reg_t creg;
     // Show all the regs!
@@ -327,6 +328,7 @@ void sim_t::interactive_creg(const std::string& cmd, const std::vector<std::stri
       );
     fprintf(stderr, "\n");
   }
+#endif
 }
 
 void sim_t::interactive_fregd(const std::string& cmd, const std::vector<std::string>& args)
