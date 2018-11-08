@@ -13,6 +13,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <config.h>
 
 static void help()
 {
@@ -135,7 +136,11 @@ int main(int argc, char** argv)
   parser.option(0, "l2", 1, [&](const char* s){l2.reset(cache_sim_t::construct(s, "L2$"));});
   parser.option(0, "log-cache-miss", 0, [&](const char* s){log_cache = true;});
   parser.option(0, "isa", 1, [&](const char* s){isa = s;});
+#ifdef ENABLE_CHERI
+  extension = find_extension("cheri");
+#else
   parser.option(0, "extension", 1, [&](const char* s){extension = find_extension(s);});
+#endif
   parser.option(0, "dump-dts", 0, [&](const char *s){dump_dts = true;});
   parser.option(0, "disable-dtb", 0, [&](const char *s){dtb_enabled = false;});
   parser.option(0, "extlib", 1, [&](const char *s){
