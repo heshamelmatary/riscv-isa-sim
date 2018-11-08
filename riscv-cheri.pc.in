@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@prefix@
+libdir=${prefix}/@libdir@
+includedir=${prefix}/@includedir@
+
+Name: riscv-cheri
+Description: Example RISC-V CHERI
+Version: git
+Libs: -Wl,-rpath,${libdir} -L${libdir} -lcheri
+Cflags: -I${includedir}
+URL: http://riscv.org/download.html#tab_spike
